@@ -1,0 +1,11 @@
+cookie:
+  expiry_days: 1
+  key: clave_firma
+  name: mi_app_cookie
+credentials:
+  usernames:
+    sgasa:
+      failed_login_attempts: 0
+      logged_in: true
+      name: Usuario SGA
+      password: $2b$12$m/VpV0/iWEW5yd/ienbdDOh8I6x6QJYGDuNXZM748kC8F55xPnPEO
