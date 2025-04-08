@@ -5,7 +5,7 @@ st.title("🔍 Buscador de Palabras Clave ICC1 CNX")
 
 
 # 📂 URLs de los archivos
-archivo = r'C:\Users\GabrielRaggio\OneDrive - SGA SPA\Documentos\Automatización PAC\Aplicación CNX\División words obs\CSV ICC 1\Respuestas ICC.csv'
+archivo = 'https://raw.githubusercontent.com/giraggio/icc1cnx/refs/heads/main/Respuestas%20ICC.csv'
 
 palabras_input = st.text_area(f"Escribe las palabras o frases clave separadas por coma", "sitio prioritario, zona protegida")
 palabras_clave = [p.strip().lower() for p in palabras_input.split(",") if p.strip()]
