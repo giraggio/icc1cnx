@@ -1,5 +1,6 @@
 import streamlit as st
 import pandas as pd
+import re
 
 st.title("🔍 Buscador de Palabras Clave ICC1 CNX")
 
