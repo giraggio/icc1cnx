@@ -15,7 +15,7 @@ if st.button("Buscar"):
     df = pd.read_csv(archivo)
 
     # Combinar palabras clave en una expresión regular
-    palabras_regex = "|".join([f"\\b{p}\\b" for p in palabras_clave])
+    palabras_regex = "|".join([re.escape(p) for p in palabras_clave])
 
     # Filtrar filas que contienen alguna palabra clave
     df["texto"] = df["texto"].astype(str).str.lower()
