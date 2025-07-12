@@ -1,14 +1,20 @@
 import streamlit as st
 import pandas as pd
 import re
-    
-# Título
+
 st.title("🔍 Buscador de Palabras Clave ICC1 CNX")
 
-# URL del archivo
-archivo = 'https://raw.githubusercontent.com/giraggio/icc1cnx/refs/heads/main/textos_con_mammoth.csv'
+# Diccionario de bases disponibles
+bases = {
+    "Tomo 18": 'https://raw.githubusercontent.com/giraggio/icc1cnx/refs/heads/main/observaciones tomo 18.csv',
+    "Archivos Originales": 'https://raw.githubusercontent.com/giraggio/icc1cnx/refs/heads/main/textos_con_mammoth.csv'
+}
 
-# Inicializar variable de estado
+# Menú para seleccionar base de datos
+base_seleccionada = st.selectbox("Selecciona la base de datos a consultar", list(bases.keys()))
+archivo = bases[base_seleccionada]
+
+# Inicializar variables de estado
 if 'buscar' not in st.session_state:
     st.session_state['buscar'] = False
 if 'resultados_df' not in st.session_state:
@@ -24,7 +30,7 @@ if st.button("Buscar"):
     st.session_state['buscar'] = True
     st.session_state['palabras_clave_input'] = palabras_input
 
-    # Cargar CSV
+    # Cargar CSV correspondiente
     df = pd.read_csv(archivo)
 
     # Filtrar por palabras clave
@@ -37,7 +43,7 @@ if st.button("Buscar"):
         resultados_df["Palabra Clave"] = resultados_df["texto"].apply(
             lambda texto: ", ".join([p for p in palabras_clave if p in texto])
         )
-        resultados_df["Archivo"] = resultados_df["nombre_archivo"]
+        resultados_df["Observación"] = resultados_df["nombre_archivo"]
 
         st.session_state['resultados_df'] = resultados_df
     else:
@@ -57,9 +63,4 @@ if st.session_state['buscar'] and not st.session_state['resultados_df'].empty:
     else:
         df_filtrado = resultados_df
 
-    st.dataframe(df_filtrado[["Palabra Clave", "Archivo"]])
-
-    # if st.button("🔁 Nueva búsqueda"):
-    #     st.session_state['buscar'] = False
-    #     st.session_state['resultados_df'] = pd.DataFrame()
-    #     st.experimental_rerun()
+    st.dataframe(df_filtrado[["Palabra Clave", "Observación"]])
