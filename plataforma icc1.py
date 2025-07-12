@@ -6,7 +6,7 @@ st.title("🔍 Buscador de Palabras Clave ICC1 CNX")
 
 # Diccionario de bases disponibles
 bases = {
-    "Tomo 18": 'https://raw.githubusercontent.com/giraggio/icc1cnx/refs/heads/main/observaciones tomo 18.csv',
+    "Tomo 18": 'https://raw.githubusercontent.com/giraggio/icc1cnx/refs/heads/main/observaciones%20tomo%2018.csv',
     "Archivos Originales": 'https://raw.githubusercontent.com/giraggio/icc1cnx/refs/heads/main/textos_con_mammoth.csv'
 }
 
