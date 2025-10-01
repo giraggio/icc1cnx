@@ -1,66 +1,95 @@
 import streamlit as st
 import pandas as pd
 import re
+import unicodedata
 
+# ----------------- Funciones auxiliares ------------------
+
+def normalizar(s: str) -> str:
+    """Convierte texto a minúsculas y elimina acentos/tildes."""
+    return unicodedata.normalize("NFKD", s.lower()).encode("ascii", "ignore").decode()
+
+def construir_patron(frase: str) -> re.Pattern:
+    """
+    Crea una expresión regular que:
+    - tolere saltos de línea entre palabras
+    - busque palabras completas (evita coincidencias parciales)
+    """
+    expr = re.escape(frase.strip())
+    expr = expr.replace(r'\ ', r'\s+')
+    return re.compile(rf'\b{expr}\b', re.IGNORECASE | re.MULTILINE)
+
+def tiene_coincidencia(texto: str, patrones: dict) -> list[str]:
+    """Devuelve la lista de frases que aparecen en el texto normalizado."""
+    return [frase for frase, patron in patrones.items() if patron.search(texto)]
+
+# ----------------- Streamlit App -------------------------
+
+st.set_page_config(page_title="Buscador ICC1 CNX", layout="wide")
 st.title("🔍 Buscador de Palabras Clave ICC1 CNX")
 
-# Diccionario de bases disponibles
-bases = {
-    "Tomo 18": 'https://raw.githubusercontent.com/giraggio/icc1cnx/refs/heads/main/observaciones%20tomo%2018.csv',
-    "Archivos Originales": 'https://raw.githubusercontent.com/giraggio/icc1cnx/refs/heads/main/textos_con_mammoth.csv'
-}
+# Ruta al archivo CSV
+archivo = 'https://raw.githubusercontent.com/giraggio/icc1cnx/refs/heads/main/textos_con_mammoth.csv'
 
-# Menú para seleccionar base de datos
-base_seleccionada = st.selectbox("Selecciona la base de datos a consultar", list(bases.keys()))
-archivo = bases[base_seleccionada]
-
-# Inicializar variables de estado
+# Inputs y estados
 if 'buscar' not in st.session_state:
     st.session_state['buscar'] = False
 if 'resultados_df' not in st.session_state:
     st.session_state['resultados_df'] = pd.DataFrame()
-if 'palabras_clave_input' not in st.session_state:
-    st.session_state['palabras_clave_input'] = ""
 
-# Input de palabras clave
-palabras_input = st.text_area("Escribe las palabras o frases clave separadas por coma", "sitio prioritario, zona protegida")
-palabras_clave = [p.strip().lower() for p in palabras_input.split(",") if p.strip()]
+# Entrada de palabras clave
+palabras_input = st.text_area(
+    "Escribe las palabras o frases clave separadas por coma",
+    "sitio prioritario, zona protegida"
+)
+palabras_clave = [p.strip() for p in palabras_input.split(",") if p.strip()]
+palabras_norm = [normalizar(p) for p in palabras_clave]
+patrones = {p: construir_patron(normalizar(p)) for p in palabras_clave}
 
+# Acción de búsqueda
 if st.button("Buscar"):
     st.session_state['buscar'] = True
-    st.session_state['palabras_clave_input'] = palabras_input
 
-    # Cargar CSV correspondiente
-    df = pd.read_csv(archivo)
+    df = pd.read_csv(archivo, dtype={"Número Observación": str})
+    df["texto_norm"] = df["texto"].astype(str).apply(normalizar)
 
-    # Filtrar por palabras clave
-    palabras_regex = "|".join([re.escape(p) for p in palabras_clave])
-    df["texto"] = df["texto"].astype(str).str.lower()
-    coincidencias = df[df["texto"].str.contains(palabras_regex, na=False, regex=True)]
+    # Detectar coincidencias
+    df["coincidencias"] = df["texto_norm"].apply(lambda txt: tiene_coincidencia(txt, patrones))
+    df_filtrado = df[df["coincidencias"].str.len() > 0].copy()
 
-    if not coincidencias.empty:
-        resultados_df = coincidencias[["texto", "nombre_archivo"]].copy()
-        resultados_df["Palabra Clave"] = resultados_df["texto"].apply(
-            lambda texto: ", ".join([p for p in palabras_clave if p in texto])
-        )
-        resultados_df["Observación"] = resultados_df["nombre_archivo"]
+    # Crear campo combinaciones únicas para filtrar
+    df_filtrado["Palabras Clave (combinadas)"] = df_filtrado["coincidencias"].apply(
+        lambda l: ", ".join(sorted(set(l)))
+    )
 
-        st.session_state['resultados_df'] = resultados_df
-    else:
-        st.session_state['resultados_df'] = pd.DataFrame()
+    st.session_state['resultados_df'] = df_filtrado
+
+# Mostrar resultados
+if st.session_state['buscar']:
+    df_filtrado = st.session_state['resultados_df']
+
+    if df_filtrado.empty:
         st.warning("No se encontraron coincidencias.")
-
-# Mostrar resultados si ya se hizo la búsqueda
-if st.session_state['buscar'] and not st.session_state['resultados_df'].empty:
-    st.success(f"Se encontraron coincidencias en {len(st.session_state['resultados_df'])} archivos.")
-
-    resultados_df = st.session_state['resultados_df']
-    palabras_unicas = sorted(resultados_df["Palabra Clave"].unique())
-    palabra_seleccionada = st.selectbox("Filtrar por Palabra Clave", ["Todas"] + palabras_unicas)
-
-    if palabra_seleccionada != "Todas":
-        df_filtrado = resultados_df[resultados_df["Palabra Clave"] == palabra_seleccionada]
     else:
-        df_filtrado = resultados_df
+        combinaciones_unicas = sorted(df_filtrado["Palabras Clave (combinadas)"].unique())
+        seleccion = st.selectbox("Filtrar por combinación de palabras clave", ["Todas"] + combinaciones_unicas)
 
-    st.dataframe(df_filtrado[["Palabra Clave", "Observación"]])
+        if seleccion != "Todas":
+            df_filtrado = df_filtrado[df_filtrado["Palabras Clave (combinadas)"] == seleccion]
+
+        # Explota por coincidencia individual para mostrar
+        df_resultados = (
+            df_filtrado
+            .explode("coincidencias")
+            .rename(columns={
+                "coincidencias": "Palabra Clave",
+                "nombre_archivo": "Número Observación"
+            })
+            [["Palabras Clave (combinadas)", "Número Observación"]]
+            .drop_duplicates()
+            .reset_index(drop=True)
+        )
+
+        st.success(f"Se encontraron {len(df_resultados)} coincidencias en {df_resultados['Número Observación'].nunique()} observaciones.")
+        st.dataframe(df_resultados)
+
