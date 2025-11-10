@@ -43,8 +43,7 @@ if opcion_base == "AC":
     archivo = URL_AC
     
 else:
-    url_ice = st.text_input("Pega aquí el URL CSV de la base **ICE**", value="", placeholder="https://...")
-    archivo = url_ice.strip()
+    archivo = url_ice
     
 
 st.divider()
@@ -136,4 +135,5 @@ if st.session_state['buscar']:
         n_obs = df_resultados[col_obs].nunique() if col_obs else "N/A"
         st.success(f"Se encontraron {len(df_resultados)} coincidencias en {n_obs} observaciones.")
         st.dataframe(df_resultados, use_container_width=True)
+
 
