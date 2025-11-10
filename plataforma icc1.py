@@ -25,7 +25,7 @@ def tiene_coincidencia(texto: str, patrones: dict) -> list[str]:
 
 @st.cache_data(show_spinner=False)
 def cargar_csv(url: str) -> pd.DataFrame:
-    return pd.read_csv(url, dtype={"Número Observación": str})
+    return pd.read_json(url, dtype={"Número Observación": str}, compression='gzip')
 
 # ----------------- Streamlit App -------------------------
 
@@ -34,10 +34,10 @@ st.title("🔍 Buscador de Palabras Clave ICC1 CNX")
 
 # ---- Selector de base de datos ----
 st.subheader("Fuente de datos")
-opcion_base = st.selectbox("Elegir base a consultar", ["AC", "ICE"], index=0)
+opcion_base = st.selectbox("Elegir base a consultar", ["ICC1 ICE", "ICC2 ICE"], index=0)
 
-URL_AC = "https://raw.githubusercontent.com/giraggio/icc1cnx/refs/heads/main/textos_con_mammoth.csv"
-url_ice = "https://github.com/giraggio/icc1cnx/raw/refs/heads/main/icc1_platform.csv"
+ICC1 = "https://github.com/giraggio/icc1cnx/raw/refs/heads/main/icc1_platform.jsonl.gz"
+ICC2 = "https://github.com/giraggio/icc1cnx/raw/refs/heads/main/icc2_platform.json"
 
 if opcion_base == "AC":
     archivo = URL_AC
@@ -135,5 +135,6 @@ if st.session_state['buscar']:
         n_obs = df_resultados[col_obs].nunique() if col_obs else "N/A"
         st.success(f"Se encontraron {len(df_resultados)} coincidencias en {n_obs} observaciones.")
         st.dataframe(df_resultados, use_container_width=True)
+
 
 
