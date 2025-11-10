@@ -39,11 +39,11 @@ opcion_base = st.selectbox("Elegir base a consultar", ["ICC1 ICE", "ICC2 ICE"], 
 ICC1 = "https://github.com/giraggio/icc1cnx/raw/refs/heads/main/icc1_platform.jsonl.gz"
 ICC2 = "https://github.com/giraggio/icc1cnx/raw/refs/heads/main/icc2_platform.json"
 
-if opcion_base == "AC":
-    archivo = URL_AC
+if opcion_base == "ICC1":
+    archivo = ICC1
     
 else:
-    archivo = url_ice
+    archivo = ICC2
     
 
 st.divider()
@@ -135,6 +135,7 @@ if st.session_state['buscar']:
         n_obs = df_resultados[col_obs].nunique() if col_obs else "N/A"
         st.success(f"Se encontraron {len(df_resultados)} coincidencias en {n_obs} observaciones.")
         st.dataframe(df_resultados, use_container_width=True)
+
 
 
 
